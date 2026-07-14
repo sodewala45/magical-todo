@@ -157,7 +157,8 @@ body{font-family:var(--font-sans);background:#e9edf2;padding:20px 0}
 
 <script>
 const TONES = ['Chime','Bell','Soft ping','Alert'];
-let tasks = [
+const STORAGE_KEY = 'magical_todo_tasks';
+const DEFAULT_TASKS = [
   {id:1,name:'Positive change your life / any other 18+ min',done:true,time:'08:00',tone:'Chime'},
   {id:2,name:'Hooponopo body',done:true,time:'09:00',tone:'Bell'},
   {id:3,name:'Hooponopo any 9+ minutes',done:true,time:'09:30',tone:'Chime'},
@@ -168,6 +169,25 @@ let tasks = [
   {id:8,name:'2 days/week any of sandra rolus any min 30 min till 30th May',done:false,time:'',tone:'Bell'},
   {id:9,name:'Manzil',done:false,time:'',tone:'Soft ping'},
 ];
+
+function loadTasks(){
+  try{
+    const saved=localStorage.getItem(STORAGE_KEY);
+    if(saved){
+      const parsed=JSON.parse(saved);
+      if(Array.isArray(parsed))return parsed;
+    }
+  }catch(e){console.error('Could not load saved tasks:',e);}
+  return DEFAULT_TASKS.map(t=>({...t}));
+}
+
+function saveTasks(){
+  try{
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(tasks));
+  }catch(e){console.error('Could not save tasks:',e);}
+}
+
+let tasks = loadTasks();
 let editId = null;
 let selTone = 'Chime';
 
@@ -237,13 +257,14 @@ function bulkAddTasks(){
     tasks.push({id:Date.now()+i,name,done:false,time:'',tone:'Chime'});
   });
   document.getElementById('bulk-text').value='';
+  saveTasks();
   renderTasks();renderManage();updateProgress();
   showToast(`${lines.length} task${lines.length>1?'s':''} added`);
 }
 
 function toggleTask(id){
   const t=tasks.find(x=>x.id===id);
-  if(t){t.done=!t.done;renderTasks();updateProgress();}
+  if(t){t.done=!t.done;saveTasks();renderTasks();updateProgress();}
 }
 
 function moveTask(id,dir){
@@ -251,12 +272,14 @@ function moveTask(id,dir){
   const newIdx=idx+dir;
   if(idx<0||newIdx<0||newIdx>=tasks.length)return;
   [tasks[idx],tasks[newIdx]]=[tasks[newIdx],tasks[idx]];
+  saveTasks();
   renderManage();renderTasks();
 }
 
 function clearAllChecks(){
   if(!confirm('Uncheck all tasks for a new day?'))return;
   tasks.forEach(t=>t.done=false);
+  saveTasks();
   renderTasks();renderManage();updateProgress();
   showToast('All checkboxes cleared \u2014 fresh start!');
 }
@@ -281,6 +304,7 @@ function submitTask(){
   document.getElementById('task-name').value='';
   document.getElementById('reminder-time').value='';
   selTone='Chime';renderToneGrid(selTone);
+  saveTasks();
   renderTasks();renderManage();
 }
 
@@ -312,6 +336,7 @@ function cancelEdit(){
 function deleteTask(id){
   if(!confirm('Delete this task?'))return;
   tasks=tasks.filter(x=>x.id!==id);
+  saveTasks();
   renderTasks();renderManage();updateProgress();
   showToast('Task deleted');
 }
