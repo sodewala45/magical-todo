@@ -126,6 +126,15 @@ body{font-family:var(--font-sans);background:#e9edf2;padding:20px 0}
     </div>
 
     <div class="form-card">
+      <h3>📥 Bulk add tasks</h3>
+      <div class="field">
+        <label>Paste tasks (one per line)</label>
+        <textarea id="bulk-text" placeholder="Task one&#10;Task two&#10;Task three" rows="5" style="width:100%;padding:8px 10px;font-size:13px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);font-family:inherit;resize:vertical"></textarea>
+      </div>
+      <button class="btn-primary" onclick="bulkAddTasks()">Add all as tasks</button>
+    </div>
+
+    <div class="form-card">
       <h3>📄 All tasks</h3>
       <div id="manage-list"></div>
     </div>
@@ -218,6 +227,18 @@ function renderManage(){
         <button class="btn-icon del" onclick="deleteTask(${t.id})" aria-label="Delete task">🗑</button>
       </div>
     </div>`).join('');
+}
+
+function bulkAddTasks(){
+  const raw=document.getElementById('bulk-text').value;
+  const lines=raw.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
+  if(!lines.length){showToast('Paste some task lines first');return;}
+  lines.forEach((name,i)=>{
+    tasks.push({id:Date.now()+i,name,done:false,time:'',tone:'Chime'});
+  });
+  document.getElementById('bulk-text').value='';
+  renderTasks();renderManage();updateProgress();
+  showToast(`${lines.length} task${lines.length>1?'s':''} added`);
 }
 
 function toggleTask(id){
