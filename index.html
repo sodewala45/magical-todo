@@ -221,7 +221,8 @@ function renderTasks(){
   const clearBtn=document.getElementById('clear-all-btn');
   if(!tasks.length){ul.innerHTML='<div class="empty">📋<p>No tasks yet. Go to Settings to add tasks.</p></div>';clearBtn.style.display='none';return;}
   clearBtn.style.display=tasks.some(t=>t.done)?'block':'none';
-  ul.innerHTML=tasks.map(t=>`
+  const displayOrder=[...tasks].sort((a,b)=>(a.done===b.done)?0:(a.done?1:-1));
+  ul.innerHTML=displayOrder.map(t=>`
     <div class="task-item ${t.done?'done':'undone'}" onclick="toggleTask(${t.id})">
       <div class="task-check" aria-label="${t.done?'Completed':'Mark complete'}">${t.done?'✓':''}</div>
       <div class="task-info">
@@ -276,8 +277,17 @@ function moveTask(id,dir){
   renderManage();renderTasks();
 }
 
+let clearConfirmPending=false;
 function clearAllChecks(){
-  if(!confirm('Uncheck all tasks for a new day?'))return;
+  const btn=document.getElementById('clear-all-btn');
+  if(!clearConfirmPending){
+    clearConfirmPending=true;
+    btn.textContent='Tap again to confirm';
+    setTimeout(()=>{clearConfirmPending=false;btn.textContent='↻ Clear all checkboxes (new day)';},3000);
+    return;
+  }
+  clearConfirmPending=false;
+  btn.textContent='↻ Clear all checkboxes (new day)';
   tasks.forEach(t=>t.done=false);
   saveTasks();
   renderTasks();renderManage();updateProgress();
