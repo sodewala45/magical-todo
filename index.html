@@ -47,6 +47,12 @@ body{font-family:var(--font-sans);background:#e9edf2;padding:20px 0}
 .btn-icon.mv:hover{color:#357abd;border-color:#357abd}
 .btn-clear{width:100%;padding:10px;background:transparent;color:#dc3545;border:0.5px solid #dc3545;border-radius:var(--border-radius-md);font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;margin-top:10px}
 .btn-clear:hover{background:#dc3545;color:#fff}
+.outcomes-card{background:var(--color-background-primary);border-radius:var(--border-radius-lg);padding:14px 16px;border:0.5px solid var(--color-border-tertiary);margin-bottom:12px}
+.outcomes-card h3{font-size:14px;font-weight:500;margin-bottom:8px;color:var(--color-text-primary)}
+.outcome-line{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.outcome-line span{color:var(--color-text-secondary);font-size:14px}
+.outcome-line input{flex:1;border:none;border-bottom:0.5px solid var(--color-border-tertiary);background:transparent;font-size:13px;padding:4px 2px;color:var(--color-text-primary)}
+.outcome-line input:focus{outline:none;border-bottom-color:#357abd}
 .btn-icon:disabled{opacity:0.3;cursor:default;pointer-events:none}
 .btn-icon.mv:hover{color:#357abd;border-color:#357abd}
 
@@ -102,6 +108,10 @@ body{font-family:var(--font-sans);background:#e9edf2;padding:20px 0}
   </div>
 
   <div id="tab-tasks" class="panel active">
+    <div class="outcomes-card">
+      <h3>🎯 Outcomes this week</h3>
+      <div id="outcomes-list"></div>
+    </div>
     <div id="task-list"></div>
     <button class="btn-clear" id="clear-all-btn" onclick="clearAllChecks()" style="display:none">↻ Clear all checkboxes (new day)</button>
   </div>
@@ -158,6 +168,41 @@ body{font-family:var(--font-sans);background:#e9edf2;padding:20px 0}
 <script>
 const TONES = ['Chime','Bell','Soft ping','Alert'];
 const STORAGE_KEY = 'magical_todo_tasks';
+const OUTCOMES_KEY = 'magical_todo_outcomes';
+const OUTCOMES_COUNT = 5;
+
+function loadOutcomes(){
+  try{
+    const saved=localStorage.getItem(OUTCOMES_KEY);
+    if(saved){
+      const parsed=JSON.parse(saved);
+      if(Array.isArray(parsed))return parsed;
+    }
+  }catch(e){console.error('Could not load outcomes:',e);}
+  return new Array(OUTCOMES_COUNT).fill('');
+}
+
+function saveOutcomes(){
+  try{
+    localStorage.setItem(OUTCOMES_KEY,JSON.stringify(outcomes));
+  }catch(e){console.error('Could not save outcomes:',e);}
+}
+
+function renderOutcomes(){
+  const el=document.getElementById('outcomes-list');
+  el.innerHTML=outcomes.map((val,i)=>`
+    <div class="outcome-line">
+      <span>•</span>
+      <input type="text" value="${val.replace(/"/g,'&quot;')}" placeholder="Outcome ${i+1}" oninput="updateOutcome(${i},this.value)">
+    </div>`).join('');
+}
+
+function updateOutcome(i,val){
+  outcomes[i]=val;
+  saveOutcomes();
+}
+
+let outcomes = loadOutcomes();
 const DEFAULT_TASKS = [
   {id:1,name:'Positive change your life / any other 18+ min',done:true,time:'08:00',tone:'Chime'},
   {id:2,name:'Hooponopo body',done:true,time:'09:00',tone:'Bell'},
@@ -368,6 +413,7 @@ function showToast(msg){
   setTimeout(()=>el.classList.remove('show'),2000);
 }
 
+renderOutcomes();
 renderTasks();updateProgress();
 </script>
 </body>
