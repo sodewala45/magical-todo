@@ -62,6 +62,12 @@ body{font-family:var(--font-sans);background:#e9edf2;padding:20px 0}
 .field label{display:block;font-size:12px;color:var(--color-text-secondary);margin-bottom:4px;font-weight:500}
 .field input,.field select{width:100%;padding:8px 10px;font-size:13px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary)}
 .field input:focus,.field select:focus{outline:none;border-color:#357abd}
+.input-mic-wrap{display:flex;gap:6px;align-items:flex-start}
+.input-mic-wrap input,.input-mic-wrap textarea{flex:1}
+.mic-btn{flex-shrink:0;width:34px;height:34px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;transition:all 0.2s}
+.mic-btn:hover{background:#cfe8f7;border-color:#357abd}
+.mic-btn.listening{background:#dc3545;border-color:#dc3545;color:#fff;animation:pulse 1s infinite}
+@keyframes pulse{0%{opacity:1}50%{opacity:0.6}100%{opacity:1}}
 .btn-primary{width:100%;padding:10px;background:#357abd;color:#fff;border:none;border-radius:var(--border-radius-md);font-size:14px;font-weight:500;cursor:pointer;transition:all 0.2s}
 .btn-primary:hover{background:#2d6fa3}
 .btn-danger{background:#dc3545;margin-top:6px}
@@ -121,7 +127,10 @@ body{font-family:var(--font-sans);background:#e9edf2;padding:20px 0}
       <h3 id="form-title">+ Add new task</h3>
       <div class="field">
         <label>Task name</label>
-        <input type="text" id="task-name" placeholder="Enter task...">
+        <div class="input-mic-wrap">
+          <input type="text" id="task-name" placeholder="Enter task...">
+          <button type="button" class="mic-btn" id="mic-task-name" onclick="startVoiceInput('task-name',this)" aria-label="Voice input">🎤</button>
+        </div>
       </div>
       <div class="field">
         <label>🔔 Reminder time</label>
@@ -138,8 +147,11 @@ body{font-family:var(--font-sans);background:#e9edf2;padding:20px 0}
     <div class="form-card">
       <h3>📥 Bulk add tasks</h3>
       <div class="field">
-        <label>Paste tasks (one per line)</label>
-        <textarea id="bulk-text" placeholder="Task one&#10;Task two&#10;Task three" rows="5" style="width:100%;padding:8px 10px;font-size:13px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);font-family:inherit;resize:vertical"></textarea>
+        <label>Paste tasks (one per line) — or tap 🎤 to dictate, one task per tap</label>
+        <div class="input-mic-wrap">
+          <textarea id="bulk-text" placeholder="Task one&#10;Task two&#10;Task three" rows="5" style="width:100%;padding:8px 10px;font-size:13px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);font-family:inherit;resize:vertical"></textarea>
+          <button type="button" class="mic-btn" id="mic-bulk-text" onclick="startVoiceInput('bulk-text',this)" aria-label="Voice input">🎤</button>
+        </div>
       </div>
       <button class="btn-primary" onclick="bulkAddTasks()">Add all as tasks</button>
     </div>
@@ -337,6 +349,57 @@ function clearAllChecks(){
   saveTasks();
   renderTasks();renderManage();updateProgress();
   showToast('All checkboxes cleared \u2014 fresh start!');
+}
+
+const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+let activeRecognition = null;
+
+function startVoiceInput(targetId, btnEl){
+  if(!SpeechRecognitionAPI){
+    showToast('Voice input not supported on this browser \u2014 try Chrome');
+    return;
+  }
+  if(activeRecognition){
+    activeRecognition.stop();
+    return;
+  }
+  const target=document.getElementById(targetId);
+  const recognition=new SpeechRecognitionAPI();
+  recognition.lang='en-US';
+  recognition.interimResults=false;
+  recognition.maxAlternatives=1;
+
+  recognition.onstart=()=>{
+    activeRecognition=recognition;
+    btnEl.classList.add('listening');
+    btnEl.textContent='\u23f9';
+  };
+
+  recognition.onresult=(e)=>{
+    const transcript=e.results[0][0].transcript.trim();
+    if(!transcript)return;
+    if(target.tagName==='TEXTAREA'){
+      target.value=target.value?(target.value.replace(/\n+$/,'')+'\n'+transcript):transcript;
+    } else {
+      target.value=transcript;
+    }
+  };
+
+  recognition.onerror=(e)=>{
+    if(e.error==='not-allowed'||e.error==='service-not-allowed'){
+      showToast('Microphone access denied');
+    } else if(e.error!=='no-speech' && e.error!=='aborted'){
+      showToast('Voice input error \u2014 try again');
+    }
+  };
+
+  recognition.onend=()=>{
+    activeRecognition=null;
+    btnEl.classList.remove('listening');
+    btnEl.textContent='\ud83c\udfa4';
+  };
+
+  recognition.start();
 }
 
 function submitTask(){
