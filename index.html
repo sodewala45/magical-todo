@@ -373,7 +373,7 @@ function spawnStars(x,y,count,sizeMultiplier){
       x,y,
       vx:Math.cos(angle)*speed,
       vy:Math.sin(angle)*speed-2,
-      size:(6+Math.random()*7)*sizeMultiplier,
+      size:(8+Math.random()*9)*sizeMultiplier,
       color:STAR_COLORS[Math.floor(Math.random()*STAR_COLORS.length)],
       life:1,
       rotation:Math.random()*Math.PI*2,
@@ -462,7 +462,9 @@ function toggleTask(id,evt){
   if(t.done){
     let x=window.innerWidth/2, y=window.innerHeight/2;
     if(evt){x=evt.clientX;y=evt.clientY;}
-    spawnStars(x,y,32);
+    const offset=60;
+    spawnStars(x-offset,y,18);
+    spawnStars(x+offset,y,18);
     if(tasks.length>0 && tasks.every(x=>x.done)){
       setTimeout(triggerCongrats,300);
     }
