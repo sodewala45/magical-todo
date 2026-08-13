@@ -460,11 +460,12 @@ function toggleTask(id,evt){
   saveTasks();
   renderTasks();updateProgress();
   if(t.done){
-    let x=window.innerWidth/2, y=window.innerHeight/2;
-    if(evt){x=evt.clientX;y=evt.clientY;}
-    const offset=60;
-    spawnStars(x-offset,y,18);
-    spawnStars(x+offset,y,18);
+    const cx=window.innerWidth/2, cy=window.innerHeight/2;
+    const offset=110;
+    spawnStars(cx-offset,cy,26,1.2);
+    spawnStars(cx+offset,cy,26,1.2);
+    spawnStars(cx,cy-offset,22,1.2);
+    spawnStars(cx,cy+offset,22,1.2);
     if(tasks.length>0 && tasks.every(x=>x.done)){
       setTimeout(triggerCongrats,300);
     }
